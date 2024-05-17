@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 import base64
+import pandas as pd
+
 from streamlit_lottie import st_lottie  
 
 def img_to_base64(image_path):
@@ -190,50 +192,36 @@ if selected_content == "Konfigurasi Elektron":
         
 if selected_content == "Periode & Golongan":
     
-    def cari_golongan_periode(dalam_konfigurasi):
-        subshell = ['1s', '2s', '2p', '3s', '3p', '4s', '3d', '4p', '5s', '4d', '5p', '6s', '4f', '5d', '6p', '7s', '5f', '6d', '7p']
-        max_electrons = {'s': 2, 'p': 6, 'd': 10, 'f': 14}
+        # Load atomic data from CSV
+    atomic_df = pd.read_csv("Data_atom.csv", index_col="name")
 
-        def parse_configuration(config):
-            electrons = {}
-            for part in config.split():
-                subshell = part[:-1]
-                num_electrons = int(part[-1])
-                electrons[subshell] = num_electrons
-            return electrons
+    def search_atomic_data(atomic_name):
+        """Search for atomic data based on atomic name."""
+        return atomic_df.loc[atomic_name] if atomic_name in atomic_df.index else None
 
-        electrons = parse_configuration(dalam_konfigurasi)
+    # Streamlit app
+    def main():
+        st.title("Atomic Data Search")
 
-        last_subshell = list(electrons.keys())[-1]
-        periode = int(last_subshell[0])
+        # Selectbox for atomic names
+        search_name = st.selectbox("Select an atomic name:", atomic_df.index.tolist())
 
-        valence_electrons = 0
-        for subshell, num in electrons.items():
-            if subshell[0] == str(periode):
-                valence_electrons += num
+        # Search for atomic data
+        result = search_atomic_data(search_name)
 
-        if last_subshell.endswith('s'):
-            if periode == 1 or periode == 2:
-                golongan = valence_electrons
-            else:
-                golongan = 2 if valence_electrons <= 2 else 10 + valence_electrons
-        elif last_subshell.endswith('p'):
-            golongan = 10 + valence_electrons
-        elif last_subshell.endswith('d'):
-            golongan = 2 + valence_electrons
-        elif last_subshell.endswith('f'):
-            golongan = valence_electrons
+        # Display result if found
+        if st.button("Search"):
+            if result is not None:
+                st.success(f"Atomic Name : {search_name}")
+                st.success(f"Periode : {result['periode']}")
+                st.success(f"Golongan : {result['golongan']}")
+            elif search_name:
+                st.error("Atomic name not found in the database.")
 
-        return golongan, periode
+    if __name__ == "__main__":
+        main()
 
-    st.title('Periode & Golongan Unsur Berdasarkan Konfigurasi Elektron')
-
-    konfigurasi_elektron = st.text_input("Masukkan konfigurasi elektron (Cth : 1s2 2s2 2p6 3s2 3p4) : ")
-
-    if st.button("Kirim"):
-        if konfigurasi_elektron:
-            golongan, periode = cari_golongan_periode(konfigurasi_elektron)
-            st.write(f"Unsur dengan konfigurasi elektron {konfigurasi_elektron} berada di golongan {golongan} dan periode {periode}.")
+    st.image('imgs/atomic_table.jpeg', width=None)
 
 if selected_content == "Our Group":
     st.title("""Halooo!!🙋‍♀️""")
